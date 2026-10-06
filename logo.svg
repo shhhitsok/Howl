@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#14171a"/>
+  <!-- ears: the reticle doubles as a dog's head -->
+  <path d="M190 156 C120 130 62 170 54 250 C48 320 66 380 104 392 C130 400 132 340 136 300 C140 250 160 200 190 156 Z" fill="#e0a526"/>
+  <path d="M322 156 C392 130 450 170 458 250 C464 320 446 380 408 392 C382 400 380 340 376 300 C372 250 352 200 322 156 Z" fill="#e0a526"/>
+  <!-- reticle -->
+  <circle cx="256" cy="286" r="150" fill="#14171a" stroke="#e0a526" stroke-width="26"/>
+  <g stroke="#e0a526" stroke-width="20" stroke-linecap="round">
+    <line x1="256" y1="150" x2="256" y2="206"/>
+    <line x1="256" y1="366" x2="256" y2="422"/>
+    <line x1="120" y1="286" x2="176" y2="286"/>
+    <line x1="336" y1="286" x2="392" y2="286"/>
+  </g>
+  <!-- shell trajectory landing on target -->
+  <path d="M150 380 Q190 170 256 286" fill="none" stroke="#e8ecef" stroke-width="12" stroke-linecap="round" stroke-dasharray="4 22"/>
+  <circle cx="256" cy="286" r="22" fill="#e05a4f"/>
+</svg>

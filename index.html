@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14171a">
+<title>HOWL — Wardogs Fire Control</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HOWL">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root {
+    --bg: #14171a;
+    --panel: #1e2328;
+    --panel-2: #262c32;
+    --line: #353d45;
+    --text: #e8ecef;
+    --muted: #8d99a4;
+    --accent: #e0a526;
+    --good: #5fbf6a;
+    --bad: #e05a4f;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { flex: none; }
+  [hidden] { display: none !important; }
+  h1 { font-size: 30px; margin: 0; letter-spacing: .18em; font-weight: 800; color: var(--accent); line-height: 1; }
+  .tag { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .14em; margin-top: 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: -4px; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--panel); border-radius: var(--radius); padding: 4px; gap: 4px; }
+  .seg button {
+    appearance: none; border: 0; border-radius: 10px; padding: 12px 8px;
+    background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 15px;
+  }
+  .seg button.on { background: var(--accent); color: #1a1400; }
+  .seg.small button { padding: 9px 6px; font-size: 14px; }
+
+  .card { background: var(--panel); border-radius: var(--radius); padding: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.me { background: var(--good); }
+  .dot.tg { background: var(--bad); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  input[type=number] {
+    width: 100%; font: inherit; font-size: 22px; font-weight: 600; color: var(--text);
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type=number]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .result { background: var(--panel); border-radius: var(--radius); padding: 16px; border: 1px solid var(--line); }
+  .big { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { background: var(--panel-2); border-radius: 10px; padding: 12px; }
+  .stat .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .stat .v { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 4px; }
+  .stat .v small { font-size: 14px; color: var(--muted); font-weight: 500; margin-left: 3px; }
+  .stat .s { font-size: 13px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .stat.hero { grid-column: 1 / -1; border: 1px solid var(--accent); }
+  .stat.hero .v { color: var(--accent); font-size: 44px; }
+  .msg { margin-top: 10px; font-size: 14px; padding: 10px 12px; border-radius: 10px; display: none; }
+  .msg.show { display: block; }
+  .msg.err { background: rgba(224,90,79,.15); color: #ff9a90; }
+  .msg.ok { background: rgba(95,191,106,.12); color: #9fe0a6; }
+
+  canvas { width: 100%; aspect-ratio: 1 / 1; display: block; background: var(--panel-2); border-radius: 10px; }
+
+  details { background: var(--panel); border-radius: var(--radius); padding: 12px 14px; }
+  summary { cursor: pointer; font-weight: 600; color: var(--muted); font-size: 14px; }
+  details .inner { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; font-size: 14px; }
+  .btns { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    font: inherit; font-weight: 600; padding: 12px; border-radius: 10px;
+  }
+  .foot { color: var(--muted); font-size: 12px; text-align: center; line-height: 1.5; }
+  .foot a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header class="brand">
+    <svg viewBox="0 0 512 512" width="56" height="56" aria-hidden="true">
+      <rect width="512" height="512" rx="112" fill="#0d0f11"/>
+      <path d="M190 156 C120 130 62 170 54 250 C48 320 66 380 104 392 C130 400 132 340 136 300 C140 250 160 200 190 156 Z" fill="#e0a526"/>
+      <path d="M322 156 C392 130 450 170 458 250 C464 320 446 380 408 392 C382 400 380 340 376 300 C372 250 352 200 322 156 Z" fill="#e0a526"/>
+      <circle cx="256" cy="286" r="150" fill="#0d0f11" stroke="#e0a526" stroke-width="26"/>
+      <g stroke="#e0a526" stroke-width="20" stroke-linecap="round">
+        <line x1="256" y1="150" x2="256" y2="206"/><line x1="256" y1="366" x2="256" y2="422"/>
+        <line x1="120" y1="286" x2="176" y2="286"/><line x1="336" y1="286" x2="392" y2="286"/>
+      </g>
+      <path d="M150 380 Q190 170 256 286" fill="none" stroke="#e8ecef" stroke-width="12" stroke-linecap="round" stroke-dasharray="4 22"/>
+      <circle cx="256" cy="286" r="22" fill="#e05a4f"/>
+    </svg>
+    <div>
+      <h1>HOWL</h1>
+      <div class="tag">Wardogs fire control</div>
+    </div>
+  </header>
+  <div class="sub">Enter your position and the target. Aim updates live.</div>
+
+  <div class="seg" id="weaponSeg">
+    <button data-w="mortar" class="on">L81 Mortar</button>
+    <button data-w="spg">SPH-2 Artillery</button>
+  </div>
+
+  <div class="seg small" id="arcSeg" hidden>
+    <button data-a="low" class="on">Low arc</button>
+    <button data-a="high">High arc</button>
+  </div>
+
+  <section class="card">
+    <h2><span class="dot me"></span>Your position</h2>
+    <div class="row">
+      <label>X <input id="mx" type="number" inputmode="decimal" step="any" placeholder="0"></label>
+      <label>Y <input id="my" type="number" inputmode="decimal" step="any" placeholder="0"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="dot tg"></span>Target position</h2>
+    <div class="row">
+      <label>X <input id="tx" type="number" inputmode="decimal" step="any" placeholder="0"></label>
+      <label>Y <input id="ty" type="number" inputmode="decimal" step="any" placeholder="0"></label>
+    </div>
+  </section>
+
+  <section class="result">
+    <div class="big">
+      <div class="stat hero">
+        <div class="k">Elevation</div>
+        <div class="v" id="elev">—</div>
+        <div class="s" id="elevSub">&nbsp;</div>
+      </div>
+      <div class="stat">
+        <div class="k">Direction</div>
+        <div class="v" id="az">—</div>
+        <div class="s" id="azSub">&nbsp;</div>
+      </div>
+      <div class="stat">
+        <div class="k">Distance</div>
+        <div class="v" id="dist">—</div>
+        <div class="s" id="distSub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="msg" id="msg"></div>
+  </section>
+
+  <canvas id="map" width="600" height="600" aria-label="Map showing your position and the target"></canvas>
+
+  <div class="btns">
+    <button class="btn" id="swapBtn">I moved to target</button>
+    <button class="btn" id="clearBtn">Clear target</button>
+  </div>
+
+  <details>
+    <summary>Settings</summary>
+    <div class="inner">
+      <div>
+        <div style="color:var(--muted);margin-bottom:6px">Which way does +Y point on the map?</div>
+        <div class="seg small" id="ySeg">
+          <button data-y="north" class="on">+Y = North</button>
+          <button data-y="south">+Y = South</button>
+        </div>
+      </div>
+      <label>Distance scale (game units → metres)
+        <input id="scale" type="number" inputmode="decimal" step="any" value="1">
+      </label>
+      <div style="color:var(--muted);font-size:13px">
+        Direction is a compass heading: 0° = North, 90° = East. If your in-game compass disagrees, flip the +Y setting.
+      </div>
+    </div>
+  </details>
+
+  <div class="foot">
+    Firing tables from the open-source
+    <a href="https://github.com/apollyon-sys/wardogs-calculator" target="_blank" rel="noopener">wardogs-calculator</a>
+    by Apollyon (MIT License). Tables assume shooter and target at the same height.
+  </div>
+</main>
+
+<script>
+// Firing tables: [range in metres, elevation in mils]
+// Source: wardogs-calculator by Apollyon, MIT License, Copyright (c) 2026 Apollyon.
+const TABLES = {
+  mortar: {
+    name: "L81 Mortar",
+    arcs: {
+      high: [[80,950],[87,940],[93,930],[99,920],[105,910],[110,900],[115,890],[118,880],[122,870],[127,860],[132,850],[140,840],[151,830],[163,820],[175,810],[187,800],[198,790],[208,780],[219,770],[229,760],[239,750],[250,740],[260,730],[270,720],[280,710],[290,700],[300,690],[310,680],[319,670],[329,660],[339,650],[348,640],[358,630],[367,620],[376,610],[385,600],[394,590],[403,580],[412,570],[420,560],[429,550],[437,540],[446,530],[454,520],[462,510],[470,500],[478,490],[486,480],[494,470],[501,460],[509,450],[516,440],[524,430],[531,420],[538,410],[545,400],[552,390],[559,380],[565,370],[572,360],[578,350],[585,340],[591,330],[597,320],[603,310],[609,300],[615,290],[620,280],[626,270],[631,260],[636,250],[641,240],[646,230],[651,220],[656,210],[661,200],[666,190],[670,180],[675,170],[680,160],[684,150]]
+    },
+    minMil: 150, maxMil: 850
+  },
+  spg: {
+    name: "SPH-2",
+    arcs: {
+      low: [[1181,20],[1232,30],[1283,40],[1334,50],[1384,60],[1433,70],[1482,80],[1529,90],[1576,100],[1622,110],[1666,120],[1709,130],[1751,140],[1792,150],[1832,160],[1870,170],[1907,180],[1944,190],[1979,200],[2014,210],[2046,220],[2079,230],[2110,240],[2139,250],[2168,260],[2196,270],[2223,280],[2249,290],[2273,300],[2296,310],[2319,320],[2341,330],[2362,340],[2383,350],[2403,360],[2422,370],[2439,380],[2456,390],[2471,400],[2485,410],[2499,420],[2513,430],[2526,440],[2538,450],[2550,460],[2561,470],[2570,480],[2579,490],[2586,500],[2593,510],[2599,520],[2605,530],[2610,540],[2615,550],[2620,560],[2623,570],[2626,580],[2628,590],[2629,600]],
+      high: [[2629,610],[2629,620],[2628,630],[2626,640],[2624,650],[2621,660],[2617,670],[2613,680],[2609,690],[2604,700],[2599,710],[2592,720],[2584,730],[2576,740],[2567,750],[2557,760],[2546,770],[2536,780],[2524,790],[2513,800],[2501,810],[2488,820],[2474,830],[2460,840],[2444,850],[2429,860],[2412,870],[2395,880],[2378,890],[2360,900],[2342,910],[2323,920],[2303,930],[2282,940],[2261,950],[2239,960],[2217,970],[2194,980],[2171,990],[2147,1000],[2123,1010],[2098,1020],[2072,1030],[2046,1040],[2019,1050],[1991,1060],[1963,1070],[1934,1080],[1905,1090],[1875,1100],[1844,1110],[1813,1120],[1782,1130],[1750,1140],[1717,1150],[1684,1160],[1650,1170],[1616,1180],[1582,1190],[1547,1200],[1512,1210],[1475,1220],[1438,1230],[1401,1240],[1363,1250],[1324,1260],[1285,1270],[1245,1280],[1205,1290],[1165,1300],[1124,1310],[1083,1320],[1041,1330],[999,1340],[956,1350],[913,1360],[869,1370],[825,1380],[780,1390]]
+    },
+    minMil: 20, maxMil: 1390
+  }
+};
+
+// Linear interpolation of elevation for a range. Tables are monotonic in range per arc.
+function solve(table, range) {
+  const sorted = [...table].sort((a, b) => a[0] - b[0]);
+  const min = sorted[0][0], max = sorted[sorted.length - 1][0];
+  if (range < min || range > max) return { ok: false, min, max };
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const [r0, m0] = sorted[i], [r1, m1] = sorted[i + 1];
+    if (range >= r0 && range <= r1) {
+      const t = r1 === r0 ? 0 : (range - r0) / (r1 - r0);
+      return { ok: true, mil: m0 + t * (m1 - m0), min, max };
+    }
+  }
+  return { ok: true, mil: sorted[sorted.length - 1][1], min, max };
+}
+
+const $ = id => document.getElementById(id);
+const fields = ["mx", "my", "tx", "ty"];
+const COMPASS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+
+const state = { weapon: "mortar", arc: "low", yDir: "north", scale: 1 };
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem("wdrf") || "{}");
+    Object.assign(state, s.state || {});
+    fields.forEach(f => { if (s[f] != null) $(f).value = s[f]; });
+  } catch (e) {}
+  $("scale").value = state.scale;
+}
+function save() {
+  try {
+    const s = { state };
+    fields.forEach(f => s[f] = $(f).value);
+    localStorage.setItem("wdrf", JSON.stringify(s));
+  } catch (e) {}
+}
+
+function setSeg(segId, attr, value) {
+  $(segId).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset[attr] === value));
+}
+
+function num(id) {
+  const v = $(id).value.trim();
+  return v === "" ? null : Number(v);
+}
+
+function showMsg(text, kind) {
+  const m = $("msg");
+  m.textContent = text || "";
+  m.className = "msg" + (text ? " show " + kind : "");
+}
+
+function update() {
+  const w = TABLES[state.weapon];
+  $("arcSeg").hidden = Object.keys(w.arcs).length < 2;
+  const arc = w.arcs[state.arc] ? state.arc : Object.keys(w.arcs)[0];
+  setSeg("weaponSeg", "w", state.weapon);
+  setSeg("arcSeg", "a", arc);
+  setSeg("ySeg", "y", state.yDir);
+
+  const mx = num("mx"), my = num("my"), tx = num("tx"), ty = num("ty");
+  const ready = [mx, my, tx, ty].every(v => v !== null && isFinite(v));
+  draw(ready ? { mx, my, tx, ty } : null);
+  save();
+
+  if (!ready) {
+    $("elev").textContent = "—"; $("elevSub").innerHTML = "&nbsp;";
+    $("az").textContent = "—"; $("azSub").innerHTML = "&nbsp;";
+    $("dist").textContent = "—"; $("distSub").innerHTML = "&nbsp;";
+    showMsg("Fill in all four coordinates.", "ok");
+    return;
+  }
+
+  const dx = tx - mx;
+  const dyRaw = ty - my;
+  const dy = state.yDir === "north" ? dyRaw : -dyRaw; // dy positive = north
+  const scale = state.scale > 0 ? state.scale : 1;
+  const range = Math.hypot(dx, dy) * scale;
+
+  let az = Math.atan2(dx, dy) * 180 / Math.PI;
+  if (az < 0) az += 360;
+  const azMil = az / 360 * 6400;
+
+  $("az").innerHTML = az.toFixed(1) + "<small>°</small>";
+  $("azSub").textContent = COMPASS[Math.round(az / 22.5) % 16] + " · " + Math.round(azMil) + " mil";
+  $("dist").innerHTML = Math.round(range) + "<small>m</small>";
+  $("distSub").textContent = w.name;
+
+  const r = solve(w.arcs[arc], range);
+  if (r.ok) {
+    $("elev").innerHTML = Math.round(r.mil) + "<small>mil</small>";
+    $("elevSub").textContent = (arc === "low" && w.arcs.high ? "Low arc" : "High arc") + " · " + r.mil.toFixed(1) + " mil exact";
+    showMsg("", "");
+  } else {
+    $("elev").textContent = "Out of range";
+    $("elevSub").textContent = arc + " arc: " + r.min + "–" + r.max + " m";
+    let hint = range < r.min ? "Too close" : "Too far";
+    hint += ` for ${w.name} (${arc} arc works ${r.min}–${r.max} m).`;
+    if (state.weapon === "spg" && arc === "low" && range >= 780 && range < r.min) hint += " Switch to High arc.";
+    if (state.weapon === "mortar" && range > r.max) hint += " Try the SPH-2.";
+    if (state.weapon === "spg" && range < 780 && range >= 80) hint += " Try the mortar.";
+    showMsg(hint, "err");
+  }
+}
+
+// Mini map: north up, you and target, range rings.
+function draw(p) {
+  const c = $("map"), g = c.getContext("2d");
+  const W = c.width, H = c.height, cx = W / 2, cy = H / 2;
+  g.clearRect(0, 0, W, H);
+  g.strokeStyle = "#353d45"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx, 20); g.lineTo(cx, H - 20); g.moveTo(20, cy); g.lineTo(W - 20, cy); g.stroke();
+  g.fillStyle = "#8d99a4"; g.font = "bold 22px system-ui"; g.textAlign = "center";
+  g.fillText("N", cx, 22); g.fillText("S", cx, H - 4);
+  g.textAlign = "left"; g.fillText("E", W - 20, cy - 6);
+  g.textAlign = "right"; g.fillText("W", 20, cy - 6);
+
+  if (!p) return;
+  const scale = state.scale > 0 ? state.scale : 1;
+  const dx = (p.tx - p.mx) * scale;
+  const dy = (state.yDir === "north" ? (p.ty - p.my) : (p.my - p.ty)) * scale;
+  const w = TABLES[state.weapon];
+  const arc = w.arcs[state.arc] ? state.arc : Object.keys(w.arcs)[0];
+  const tbl = w.arcs[arc].map(e => e[0]);
+  const minR = Math.min(...tbl), maxR = Math.max(...tbl);
+  const span = Math.max(Math.hypot(dx, dy), maxR) * 1.08;
+  const k = (W / 2 - 30) / span;
+
+  // usable range band
+  g.fillStyle = "rgba(95,191,106,0.10)";
+  g.beginPath();
+  g.arc(cx, cy, maxR * k, 0, Math.PI * 2);
+  g.arc(cx, cy, minR * k, 0, Math.PI * 2, true);
+  g.fill();
+  g.strokeStyle = "rgba(95,191,106,0.5)"; g.setLineDash([6, 6]);
+  g.beginPath(); g.arc(cx, cy, maxR * k, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(cx, cy, minR * k, 0, Math.PI * 2); g.stroke();
+  g.setLineDash([]);
+
+  const px = cx + dx * k, py = cy - dy * k;
+  g.strokeStyle = "#e0a526"; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(cx, cy); g.lineTo(px, py); g.stroke();
+
+  g.fillStyle = "#5fbf6a"; g.beginPath(); g.arc(cx, cy, 9, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#e05a4f"; g.beginPath(); g.arc(px, py, 9, 0, Math.PI * 2); g.fill();
+}
+
+// Events
+$("weaponSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.weapon = b.dataset.w;
+  if (!TABLES[state.weapon].arcs[state.arc]) state.arc = Object.keys(TABLES[state.weapon].arcs)[0];
+  update();
+});
+$("arcSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.arc = b.dataset.a; update();
+});
+$("ySeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.yDir = b.dataset.y; update();
+});
+$("scale").addEventListener("input", () => { state.scale = Number($("scale").value) || 1; update(); });
+fields.forEach(f => $(f).addEventListener("input", update));
+$("swapBtn").addEventListener("click", () => {
+  // after moving, the old target spot becomes your new position
+  $("mx").value = $("tx").value; $("my").value = $("ty").value;
+  $("tx").value = ""; $("ty").value = ""; update(); $("tx").focus();
+});
+$("clearBtn").addEventListener("click", () => {
+  $("tx").value = ""; $("ty").value = ""; update(); $("tx").focus();
+});
+
+load();
+update();
+</script>
+</body>
+</html>
