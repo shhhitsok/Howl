@@ -2,6 +2,10 @@
 
 <img src="logo.svg" width="96" alt="HOWL logo">
 
+## Play it
+
+👉 **[Open HOWL](https://shhhitsok.github.io/Howl/)**
+
 A phone-friendly mortar and artillery range finder for Wardogs.
 Enter your X/Y and the target's X/Y, and HOWL tells you where to aim:
 elevation (mils), direction (compass heading) and distance.
